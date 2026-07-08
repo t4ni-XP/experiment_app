@@ -235,21 +235,23 @@ input {
 
 .rsme-anchor {
   position: absolute;
-  left: 10px;
+  left: 0;
   transform: translateY(50%);
   font-size: 14px;
   color: #333;
   line-height: 1.25;
-  padding-left: 12px;
+  padding-left: 52px;
 }
+/* スケール線からラベルまでの引き出し線（線の中央から始める） */
 .rsme-anchor::before {
   content: "";
   position: absolute;
-  left: 0;
+  left: -36px; /* トラック列(72px)の中央線まで戻る */
   top: 50%;
-  width: 8px;
+  transform: translateY(-50%);
+  width: 82px;
   height: 2px;
-  background: #6b7482;
+  background: #8a93a2;
 }
 
 .rsme-handle {
@@ -402,4 +404,6 @@ input {
   .likert button { font-size: 24px; min-width: 44px; min-height: 52px; }
   .qtext { font-size: 24px; }
   .rsme-scale { grid-template-columns: 44px 60px 1fr; }
+  .rsme-anchor { padding-left: 46px; }
+  .rsme-anchor::before { left: -30px; width: 72px; } /* トラック列60pxの中央線に合わせる */
 }
