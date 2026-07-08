@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="走行後評価">
+<title>走行後主観評価</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<!-- ===== 実験者セットアップ画面 ===== -->
+<section id="screen-setup" class="screen">
+  <div class="setup-box">
+    <h1>実験者セットアップ</h1>
+    <p id="setup-resume-note" class="note hidden"></p>
+    <div class="field">
+      <label for="inp-participant">参加者ID</label>
+      <input id="inp-participant" type="text" autocomplete="off" autocapitalize="characters" placeholder="P01">
+    </div>
+    <div class="field">
+      <label>条件</label>
+      <div id="condition-group" class="seg"></div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="inp-startrun">開始走行番号</label>
+        <input id="inp-startrun" type="number" inputmode="numeric" min="1" value="1">
+      </div>
+      <div class="field">
+        <label for="inp-planned">予定走行数</label>
+        <input id="inp-planned" type="number" inputmode="numeric" min="1">
+      </div>
+    </div>
+    <p id="setup-error" class="error hidden"></p>
+    <button id="btn-start" class="btn primary big">回答を開始</button>
+  </div>
+</section>
+
+<!-- ===== 画面1：JoA ===== -->
+<section id="screen-joa" class="screen q-screen">
+  <p class="qtext" id="joa-text"></p>
+  <div class="likert-wrap">
+    <div class="likert" id="joa-likert"></div>
+    <div class="likert-ends"><span id="joa-min"></span><span id="joa-max"></span></div>
+  </div>
+  <div class="nav"><button id="joa-next" class="btn primary" disabled>次へ</button></div>
+</section>
+
+<!-- ===== 画面2：主観パフォーマンス ===== -->
+<section id="screen-perf" class="screen q-screen">
+  <p class="qtext" id="perf-text"></p>
+  <div class="likert-wrap">
+    <div class="likert" id="perf-likert"></div>
+    <div class="likert-ends"><span id="perf-min"></span><span id="perf-max"></span></div>
+  </div>
+  <div class="nav"><button id="perf-next" class="btn primary" disabled>次へ</button></div>
+</section>
+
+<!-- ===== 画面3：RSME ===== -->
+<section id="screen-rsme" class="screen q-screen">
+  <p class="qtext qtext-rsme" id="rsme-text"></p>
+  <div class="rsme-body">
+    <div class="rsme-valuebox">現在の値：<span id="rsme-value">未回答</span></div>
+    <div class="rsme-scale" id="rsme-scale">
+      <div class="rsme-numbers" id="rsme-numbers"></div>
+      <div class="rsme-trackcol" id="rsme-track">
+        <div class="rsme-line"></div>
+        <div class="rsme-handle hidden" id="rsme-handle">
+          <div class="rsme-handle-bar"></div>
+          <div class="rsme-handle-knob"></div>
+        </div>
+      </div>
+      <div class="rsme-anchors" id="rsme-anchors"></div>
+    </div>
+  </div>
+  <div class="nav"><button id="rsme-next" class="btn primary" disabled>決定</button></div>
+</section>
+
+<!-- ===== 画面4：確認 ===== -->
+<section id="screen-confirm" class="screen">
+  <h2>回答の確認</h2>
+  <div class="confirm-list" id="confirm-list"></div>
+  <div class="nav nav-center"><button id="btn-save" class="btn primary big">回答を確定</button></div>
+</section>
+
+<!-- ===== 待機画面 ===== -->
+<section id="screen-wait" class="screen center-screen">
+  <p class="wait-msg" id="wait-msg"></p>
+  <p class="progress" id="wait-progress"></p>
+  <button id="btn-next-run" class="btn small ghost">次の回答へ</button>
+</section>
+
+<!-- ===== 完了画面 ===== -->
+<section id="screen-complete" class="screen center-screen">
+  <p class="wait-msg" id="complete-msg"></p>
+  <p class="progress" id="complete-progress"></p>
+  <div class="complete-exp">
+    <p class="note">実験者の方へ：実験者パネルからCSVを書き出してください。</p>
+    <button id="btn-open-panel" class="btn small">実験者パネルを開く（CSV書き出し）</button>
+    <button id="btn-extra-run" class="btn small ghost">追加の走行を回答する</button>
+  </div>
+</section>
+
+<!-- ===== 実験者パネル（オーバーレイ） ===== -->
+<div id="panel" class="overlay hidden">
+  <div class="panel-box">
+    <h2>実験者パネル</h2>
+    <p class="panel-status" id="panel-status"></p>
+    <div class="panel-table-wrap">
+      <table class="panel-table">
+        <thead>
+          <tr><th>participant</th><th>cond</th><th>run</th><th>joa</th><th>perf</th><th>rsme</th><th>timestamp</th><th>書出</th></tr>
+        </thead>
+        <tbody id="panel-tbody"></tbody>
+      </table>
+    </div>
+    <div class="panel-actions">
+      <button id="btn-del-last" class="btn small warn">直前レコードを削除</button>
+      <button id="btn-export-participant" class="btn small">この参加者のみCSV書き出し</button>
+      <button id="btn-export-all" class="btn small">全件CSV書き出し</button>
+      <button id="btn-wipe" class="btn small danger">書き出し済みデータを消去</button>
+    </div>
+    <p class="panel-wipe-note hidden" id="wipe-note"></p>
+    <div class="panel-actions">
+      <button id="btn-end-session" class="btn small ghost">セッション終了（セットアップへ戻る）</button>
+      <button id="btn-close-panel" class="btn small">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 実験者パネル起動ボタン（長押し1.5秒） -->
+<div id="panel-trigger" aria-hidden="true"></div>
+
+<!-- トースト -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
