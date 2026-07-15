@@ -11,7 +11,17 @@
 
   // ---------- 状態 ----------
   let session = null; // {participant, condition, plannedRuns, currentRun}
-  let draft = { joa: null, perf: null, rsme: null };
+  const PRED_KEYS = CONFIG.questions.pred.items.map((it) => it.key);
+  // 現在の条件で予測可能性画面を出すか（skipConditions の条件では出さない）
+  function predEnabled() {
+    return session && CONFIG.questions.pred.skipConditions.indexOf(session.condition) === -1;
+  }
+  function emptyDraft() {
+    const d = { joa: null, perf: null, rsme: null };
+    PRED_KEYS.forEach((k) => { d[k] = null; });
+    return d;
+  }
+  let draft = emptyDraft();
   let fromConfirm = false; // 確認画面の「修正」から来たか
 
   // ---------- ストレージ ----------
@@ -180,10 +190,11 @@
   }
 
   // ============================================================
-  // 参加者回答フロー（JoA → パフォーマンス → RSME → 確認）
+  // 参加者回答フロー（JoA → パフォーマンス → 支援システム予測可能性 → RSME → 確認）
+  // ※予測可能性は skipConditions の条件（例：C）ではスキップ
   // ============================================================
   function startRunFlow() {
-    draft = { joa: null, perf: null, rsme: null };
+    draft = emptyDraft();
     fromConfirm = false;
     renderLikert("joa");
     show("screen-joa");
@@ -217,6 +228,9 @@
         } else if (key === "joa") {
           renderLikert("perf");
           show("screen-perf");
+        } else if (predEnabled()) {
+          renderPred();
+          show("screen-pred");
         } else {
           renderRsme();
           show("screen-rsme");
@@ -230,6 +244,70 @@
       b.classList.toggle("selected", Number(b.textContent) === draft[key]);
     });
     $(key + "-next").disabled = draft[key] == null;
+  }
+
+  // ---------- 支援システム予測可能性（3項目・同一ページ） ----------
+  function initPred() {
+    const q = CONFIG.questions.pred;
+    $("pred-instruction").textContent = q.instruction;
+
+    const wrap = $("pred-items");
+    q.items.forEach((item) => {
+      const block = document.createElement("div");
+      block.className = "pred-item";
+
+      const text = document.createElement("p");
+      text.className = "pred-qtext";
+      text.textContent = item.text;
+      block.appendChild(text);
+
+      const likert = document.createElement("div");
+      likert.className = "likert";
+      likert.id = item.key + "-likert";
+      for (let v = 1; v <= 7; v++) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = v;
+        b.addEventListener("click", () => {
+          draft[item.key] = v;
+          renderPred();
+        });
+        likert.appendChild(b);
+      }
+      block.appendChild(likert);
+
+      const ends = document.createElement("div");
+      ends.className = "likert-ends";
+      const minEl = document.createElement("span");
+      minEl.textContent = q.minLabel;
+      const maxEl = document.createElement("span");
+      maxEl.textContent = q.maxLabel;
+      ends.appendChild(minEl);
+      ends.appendChild(maxEl);
+      block.appendChild(ends);
+
+      wrap.appendChild(block);
+    });
+
+    $("pred-next").addEventListener("click", () => {
+      if (PRED_KEYS.some((k) => draft[k] == null)) return;
+      if (fromConfirm) {
+        fromConfirm = false;
+        showConfirm();
+      } else {
+        renderRsme();
+        show("screen-rsme");
+      }
+    });
+  }
+
+  function renderPred() {
+    PRED_KEYS.forEach((k) => {
+      $(k + "-likert").querySelectorAll("button").forEach((b) => {
+        b.classList.toggle("selected", Number(b.textContent) === draft[k]);
+      });
+    });
+    $("pred-next").disabled = PRED_KEYS.some((k) => draft[k] == null);
   }
 
   // ---------- RSME（縦型スライダー） ----------
@@ -316,17 +394,22 @@
     const list = $("confirm-list");
     list.innerHTML = "";
     const items = [
-      { key: "joa", screen: "screen-joa" },
-      { key: "perf", screen: "screen-perf" },
-      { key: "rsme", screen: "screen-rsme" }
+      { key: "joa", label: CONFIG.questions.joa.shortLabel, screen: "screen-joa" },
+      { key: "perf", label: CONFIG.questions.perf.shortLabel, screen: "screen-perf" }
     ];
+    if (predEnabled()) {
+      CONFIG.questions.pred.items.forEach((it) => {
+        items.push({ key: it.key, label: it.shortLabel, screen: "screen-pred" });
+      });
+    }
+    items.push({ key: "rsme", label: CONFIG.questions.rsme.shortLabel, screen: "screen-rsme" });
     items.forEach((it) => {
       const row = document.createElement("div");
       row.className = "confirm-row";
 
       const label = document.createElement("div");
       label.className = "c-label";
-      label.textContent = CONFIG.questions[it.key].shortLabel;
+      label.textContent = it.label;
 
       const value = document.createElement("div");
       value.className = "c-value";
@@ -339,6 +422,7 @@
       edit.addEventListener("click", () => {
         fromConfirm = true; // 修正後は確認画面に戻る（他の回答は保持）
         if (it.key === "rsme") renderRsme();
+        else if (it.screen === "screen-pred") renderPred();
         else renderLikert(it.key);
         show(it.screen);
       });
@@ -353,7 +437,8 @@
 
   // ---------- 保存（回答を確定） ----------
   function confirmSave() {
-    if (draft.joa == null || draft.perf == null || draft.rsme == null) return;
+    if (draft.joa == null || draft.perf == null || draft.rsme == null ||
+        (predEnabled() && PRED_KEYS.some((k) => draft[k] == null))) return;
 
     const records = loadRecords();
     const idx = records.findIndex(
@@ -375,6 +460,9 @@
       run: session.currentRun,
       joa: draft.joa,
       perf: draft.perf,
+      pred1: draft.pred1,
+      pred2: draft.pred2,
+      pred3: draft.pred3,
       rsme: draft.rsme,
       app_version: CONFIG.appVersion,
       exported: false
@@ -452,7 +540,12 @@
     tbody.innerHTML = "";
     records.forEach((r) => {
       const tr = document.createElement("tr");
-      [r.participant, r.condition, r.run, r.joa, r.perf, r.rsme, r.timestamp,
+      // 旧バージョンのレコード（pred列なし）は空欄で表示
+      [r.participant, r.condition, r.run, r.joa, r.perf,
+       r.pred1 == null ? "" : r.pred1,
+       r.pred2 == null ? "" : r.pred2,
+       r.pred3 == null ? "" : r.pred3,
+       r.rsme, r.timestamp,
        r.exported ? "✓" : "—"].forEach((v) => {
         const td = document.createElement("td");
         td.textContent = v;
@@ -491,7 +584,9 @@
     const ok = window.confirm(
       "直前のレコードを削除します。\n" +
       last.participant + "・走行" + last.run +
-      "（joa=" + last.joa + ", perf=" + last.perf + ", rsme=" + last.rsme + "）\nよろしいですか？"
+      "（joa=" + last.joa + ", perf=" + last.perf +
+      ", pred=" + [last.pred1, last.pred2, last.pred3].map((v) => (v == null ? "-" : v)).join("/") +
+      ", rsme=" + last.rsme + "）\nよろしいですか？"
     );
     if (!ok) return;
     records.pop();
@@ -521,9 +616,13 @@
       return;
     }
 
-    const header = "timestamp,participant,condition,run,joa,perf,rsme,app_version";
+    const header = "timestamp,participant,condition,run,joa,perf,pred1,pred2,pred3,rsme,app_version";
     const lines = targets.map((r) =>
-      [r.timestamp, r.participant, r.condition, r.run, r.joa, r.perf, r.rsme, r.app_version]
+      [r.timestamp, r.participant, r.condition, r.run, r.joa, r.perf,
+       r.pred1 == null ? "" : r.pred1,
+       r.pred2 == null ? "" : r.pred2,
+       r.pred3 == null ? "" : r.pred3,
+       r.rsme, r.app_version]
         .map(csvEscape).join(",")
     );
     // BOM付きUTF-8（Excelでの文字化け防止）
@@ -577,6 +676,7 @@
   function init() {
     initSetup();
     initLikertScreens();
+    initPred();
     initRsme();
     initPanelTrigger();
 
