@@ -63,7 +63,14 @@
   <div class="nav"><button id="perf-next" class="btn primary" disabled>次へ</button></div>
 </section>
 
-<!-- ===== 画面3：RSME ===== -->
+<!-- ===== 画面3：支援システム予測可能性（3項目・同一ページ／条件により省略） ===== -->
+<section id="screen-pred" class="screen q-screen">
+  <p class="pred-instruction" id="pred-instruction"></p>
+  <div class="pred-items" id="pred-items"></div>
+  <div class="nav"><button id="pred-next" class="btn primary" disabled>次へ</button></div>
+</section>
+
+<!-- ===== 画面4：RSME ===== -->
 <section id="screen-rsme" class="screen q-screen">
   <p class="qtext qtext-rsme" id="rsme-text"></p>
   <div class="rsme-body">
@@ -83,7 +90,7 @@
   <div class="nav"><button id="rsme-next" class="btn primary" disabled>決定</button></div>
 </section>
 
-<!-- ===== 画面4：確認 ===== -->
+<!-- ===== 画面5：確認 ===== -->
 <section id="screen-confirm" class="screen">
   <h2>回答の確認</h2>
   <div class="confirm-list" id="confirm-list"></div>
@@ -116,7 +123,7 @@
     <div class="panel-table-wrap">
       <table class="panel-table">
         <thead>
-          <tr><th>participant</th><th>cond</th><th>run</th><th>joa</th><th>perf</th><th>rsme</th><th>timestamp</th><th>書出</th></tr>
+          <tr><th>participant</th><th>cond</th><th>run</th><th>joa</th><th>perf</th><th>pred1</th><th>pred2</th><th>pred3</th><th>rsme</th><th>timestamp</th><th>書出</th></tr>
         </thead>
         <tbody id="panel-tbody"></tbody>
       </table>
