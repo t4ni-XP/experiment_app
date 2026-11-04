@@ -1,0 +1,9 @@
+{
+  "name": "experiment-app",
+  "private": true,
+  "version": "2.0.0",
+  "description": "走行後主観評価アプリ（静的サイト。ビルド工程なし）",
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs"
+  }
+}
