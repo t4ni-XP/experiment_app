@@ -25,8 +25,18 @@
       <input id="inp-participant" type="text" autocomplete="off" autocapitalize="characters" placeholder="P01">
     </div>
     <div class="field">
+      <label>実験</label>
+      <div id="experiment-group" class="seg"></div>
+      <p id="experiment-desc" class="note"></p>
+    </div>
+    <div class="field" id="field-condition">
       <label>条件</label>
       <div id="condition-group" class="seg"></div>
+    </div>
+    <div class="field hidden" id="field-order">
+      <label>条件の順序</label>
+      <div id="order-group" class="seg"></div>
+      <p id="order-desc" class="note"></p>
     </div>
     <div class="field-row">
       <div class="field">
@@ -43,34 +53,18 @@
   </div>
 </section>
 
-<!-- ===== 画面1：JoA ===== -->
-<section id="screen-joa" class="screen q-screen">
-  <p class="qtext" id="joa-text"></p>
-  <div class="likert-wrap">
-    <div class="likert" id="joa-likert"></div>
-    <div class="likert-ends"><span id="joa-min"></span><span id="joa-max"></span></div>
-  </div>
-  <div class="nav"><button id="joa-next" class="btn primary" disabled>次へ</button></div>
-</section>
+<!-- ===== 1問1画面の7段階リッカート（行為主体感・原因・否定・パフォーマンス） =====
+     config.js の likertKeys から app.js が #likert-screens の位置に生成する -->
+<div id="likert-screens"></div>
 
-<!-- ===== 画面2：主観パフォーマンス ===== -->
-<section id="screen-perf" class="screen q-screen">
-  <p class="qtext" id="perf-text"></p>
-  <div class="likert-wrap">
-    <div class="likert" id="perf-likert"></div>
-    <div class="likert-ends"><span id="perf-min"></span><span id="perf-max"></span></div>
-  </div>
-  <div class="nav"><button id="perf-next" class="btn primary" disabled>次へ</button></div>
-</section>
-
-<!-- ===== 画面3：支援システム予測可能性（3項目・同一ページ／条件により省略） ===== -->
+<!-- ===== 支援システム予測可能性（3項目・同一ページ／条件により省略） ===== -->
 <section id="screen-pred" class="screen q-screen">
   <p class="pred-instruction" id="pred-instruction"></p>
   <div class="pred-items" id="pred-items"></div>
   <div class="nav"><button id="pred-next" class="btn primary" disabled>次へ</button></div>
 </section>
 
-<!-- ===== 画面4：RSME ===== -->
+<!-- ===== RSME ===== -->
 <section id="screen-rsme" class="screen q-screen">
   <p class="qtext qtext-rsme" id="rsme-text"></p>
   <div class="rsme-body">
@@ -90,7 +84,7 @@
   <div class="nav"><button id="rsme-next" class="btn primary" disabled>決定</button></div>
 </section>
 
-<!-- ===== 画面5：確認 ===== -->
+<!-- ===== 確認 ===== -->
 <section id="screen-confirm" class="screen">
   <h2>回答の確認</h2>
   <div class="confirm-list" id="confirm-list"></div>
@@ -123,7 +117,7 @@
     <div class="panel-table-wrap">
       <table class="panel-table">
         <thead>
-          <tr><th>participant</th><th>cond</th><th>run</th><th>joa</th><th>perf</th><th>pred1</th><th>pred2</th><th>pred3</th><th>rsme</th><th>timestamp</th><th>書出</th></tr>
+          <tr id="panel-thead-row"></tr>
         </thead>
         <tbody id="panel-tbody"></tbody>
       </table>
